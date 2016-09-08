@@ -24,7 +24,7 @@ def filename_to_preictal(file_path):
 
 
 def matfile_metadata(matfile):
-    return {column: matfile[column][0, 0][0, 0] for column in METADATA_COLUMNS if column in matfile.dtype.names}
+    return {column: matfile[column][0, 0][0] for column in METADATA_COLUMNS if column in matfile.dtype.names}
 
 
 def mat_to_dataframe(files):
