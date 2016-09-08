@@ -35,15 +35,19 @@ def mat_to_dataframe(files):
 
     for file_path in files:
         if path.isfile(file_path):
-            mat_file = loadmat(file_path)['dataStruct']
-            metadata = {**filename_metadata(file_path), **matfile_metadata(mat_file)}
-            index = (metadata['patient_id'], metadata['segment_i'])
+            try:
+                mat_file = loadmat(file_path)['dataStruct']
+            except ValueError as err:
+                print('Error in file \"{}\": \"{}\"'.format(file_path, err))
+            else:
+                metadata = {**filename_metadata(file_path), **matfile_metadata(mat_file)}
+                index = (metadata['patient_id'], metadata['segment_i'])
 
-            # Add mat data to dictionary
-            for column in METADATA_COLUMNS:
-                all_data['meta', column][index] = metadata[column]
-            for data_i, data in enumerate(mat_file['data'][0, 0].transpose()):
-                all_data['data', data_i][index] = data
+                # Add mat data to dictionary
+                for column in METADATA_COLUMNS:
+                    all_data['meta', column][index] = metadata[column]
+                for data_i, data in enumerate(mat_file['data'][0, 0].transpose()):
+                    all_data['data', data_i][index] = data
     return pd.DataFrame(all_data)
 
 
