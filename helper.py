@@ -10,17 +10,24 @@ METADATA_COLUMNS = ['iEEGsamplingRate', 'nSamplesSegment', 'channelIndices', 'se
 
 
 def filename_metadata(file_path):
+    is_preictal = None
     file = path.splitext(path.basename(file_path))[0]
-    patient_id, segment_i, is_preictal = file.split('_')
+    file_splits = file.split('_')
+
+    # Check if filename is for a test file
+    if len(file_splits) > 2:
+        patient_id, segment_i, is_preictal = file_splits
+        is_preictal = is_preictal == '1'
+    else:
+        patient_id, segment_i = file_splits
     patient_id = int(patient_id)
     segment_i = int(segment_i)
-    is_preictal = is_preictal == '1'
 
     return {'patient_id': patient_id, 'segment_i': segment_i, 'is_preictal': is_preictal}
 
 
 def matfile_metadata(matfile):
-    return {column: matfile[column][0, 0][0, 0] for column in METADATA_COLUMNS if column != 'is_preictal'}
+    return {column: matfile[column][0, 0][0, 0] for column in METADATA_COLUMNS if column in matfile.dtype.names}
 
 
 def mat_to_dataframe(files):
