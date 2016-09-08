@@ -9,21 +9,18 @@ import pandas as pd
 METADATA_COLUMNS = ['iEEGsamplingRate', 'nSamplesSegment', 'channelIndices', 'sequence', 'is_preictal']
 
 
-def filename_metadata(file_path):
-    is_preictal = None
+def filename_to_index(file_path):
     file = path.splitext(path.basename(file_path))[0]
     file_splits = file.split('_')
 
-    # Check if filename is for a test file
-    if len(file_splits) > 2:
-        patient_id, segment_i, is_preictal = file_splits
-        is_preictal = is_preictal == '1'
-    else:
-        patient_id, segment_i = file_splits
-    patient_id = int(patient_id)
-    segment_i = int(segment_i)
+    return file_splits[0], file_splits[1]
 
-    return {'patient_id': patient_id, 'segment_i': segment_i, 'is_preictal': is_preictal}
+
+def filename_to_preictal(file_path):
+    file = path.splitext(path.basename(file_path))[0]
+    file_splits = file.split('_')
+
+    return file_splits[2] == '1'
 
 
 def matfile_metadata(matfile):
@@ -47,8 +44,9 @@ def mat_to_dataframe(files):
             except ValueError as err:
                 print('Error in file \"{}\": \"{}\"'.format(file_path, err))
             else:
-                metadata = {**filename_metadata(file_path), **matfile_metadata(mat_file)}
-                index = (metadata['patient_id'], metadata['segment_i'])
+                metadata = matfile_metadata(mat_file)
+                metadata['is_preictal'] = filename_to_preictal(file_path)
+                index = filename_to_index(file_path)
 
                 # Add mat data to dictionary
                 for column in METADATA_COLUMNS:
