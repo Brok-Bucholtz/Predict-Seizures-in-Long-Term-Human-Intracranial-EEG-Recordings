@@ -6,34 +6,44 @@ from scipy.io import loadmat
 import pandas as pd
 
 
+METADATA_COLUMNS = ['iEEGsamplingRate', 'nSamplesSegment', 'channelIndices', 'sequence', 'is_preictal']
+
+
+def filename_metadata(file_path):
+    file = path.splitext(path.basename(file_path))[0]
+    patient_id, segment_i, is_preictal = file.split('_')
+    patient_id = int(patient_id)
+    segment_i = int(segment_i)
+    is_preictal = is_preictal == '1'
+
+    return {'patient_id': patient_id, 'segment_i': segment_i, 'is_preictal': is_preictal}
+
+
+def matfile_metadata(matfile):
+    return {column: matfile[column][0, 0][0, 0] for column in METADATA_COLUMNS if column != 'is_preictal'}
+
+
 def mat_to_dataframe(files):
     main_data_size = 16
-    meta_data_columns = ['iEEGsamplingRate', 'nSamplesSegment', 'channelIndices', 'sequence', 'is_preictal']
     all_data = {}
 
     # Setup dictionary to store data
-    for meta_column in meta_data_columns:
+    for meta_column in METADATA_COLUMNS:
         all_data['meta', meta_column] = {}
     for data_i in range(main_data_size):
         all_data['data', data_i] = {}
 
     for file_path in files:
         if path.isfile(file_path):
-            file = path.splitext(path.basename(file_path))[0]
-            patient_id, segment_i, is_preictal = file.split('_')
-            patient_id = int(patient_id)
-            segment_i = int(segment_i)
-            is_preictal = is_preictal == '1'
-            data_struct = loadmat(file_path)['dataStruct']
+            mat_file = loadmat(file_path)['dataStruct']
+            metadata = {**filename_metadata(file_path), **matfile_metadata(mat_file)}
+            index = (metadata['patient_id'], metadata['segment_i'])
 
             # Add mat data to dictionary
-            for column in meta_data_columns:
-                if column == 'is_preictal':
-                    all_data['meta', 'is_preictal'][patient_id, segment_i] = is_preictal
-                else:
-                    all_data['meta', column][patient_id, segment_i] = data_struct[column][0, 0][0, 0]
-            for data_i, data in enumerate(data_struct['data'][0, 0].transpose()):
-                all_data['data', data_i][patient_id, segment_i] = data
+            for column in METADATA_COLUMNS:
+                all_data['meta', column][index] = metadata[column]
+            for data_i, data in enumerate(mat_file['data'][0, 0].transpose()):
+                all_data['data', data_i][index] = data
     return pd.DataFrame(all_data)
 
 
