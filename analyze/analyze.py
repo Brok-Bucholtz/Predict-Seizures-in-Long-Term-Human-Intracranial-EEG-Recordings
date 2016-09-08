@@ -9,7 +9,7 @@ from helper import matfile_metadata, METADATA_COLUMNS, filename_to_preictal
 
 def print_unique_metadata():
     metadata = {column: [] for column in METADATA_COLUMNS}
-    file_paths = glob('./input/*/*.mat')
+    file_paths = glob('../input/*/*.mat')
     with tqdm(total=len(file_paths), unit='File') as progress_bar:
         for file_path in file_paths:
             progress_bar.update()
